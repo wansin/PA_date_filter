@@ -32,7 +32,7 @@
 # In the Python shell, ds.Models shows unique data only. 
 # The UFED PA GUI shows duplicate counts (in parenthesis).
 
-# changelog 2016-06-26	Add DeviceInfo timestamp checks with UTC-0 default.
-# changelog 2016-06-23  Remove 'ActiveTime' timestamp. It is like 'Duration' - not a timestamp.
-# changelog 2016-06-23	ApplicationUsage has LastLaunch timestamps with mix of values showing 
-# 			UTC offset and no UTC offset. Treat the no UTC offset timestamps as UTC time.
+changelog 2016-06-26	Add DeviceInfo timestamp checks with UTC-0 default.
+changelog 2016-06-23  Remove 'ActiveTime' timestamp. It is like 'Duration' - not a timestamp.
+changelog 2016-06-23	ApplicationUsage has LastLaunch timestamps with mix of values showing 
+ 			UTC offset and no UTC offset. Treat the no UTC offset timestamps as UTC time.
