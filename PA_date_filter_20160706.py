@@ -2,7 +2,7 @@
 
 # Cellebrite Physical Analyzer (PA) date and time filter script
 # Wansin Ounkeo 2016-5-22
-# Tested: PA 5.02, internal IronPython 2.6 shell, Win7x64 4GB RAM
+# Tested: PA 5.02, 5.1, internal IronPython 2.6 shell, Win7x64 4GB RAM
 
 # This script filters for all data (including deleted data) that 
 # fall within a user-specified date range.
