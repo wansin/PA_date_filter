@@ -33,6 +33,9 @@ secondary categories are not updated.
 In the Python shell, ds.Models shows unique data only. 
 The UFED PA GUI shows duplicate counts (in parenthesis).
 
+changelog 2016-07-17  Handle EXIFTime stamps that have a 'T' between date and time.
+                      Handle time formats in 24 hr time that use '24' instead of '0'
+
 changelog 2016-06-26	Add DeviceInfo timestamp checks with UTC-0 default.
 
 changelog 2016-06-23  Remove 'ActiveTime' timestamp. It is like 'Duration' - not a timestamp.
