@@ -2,7 +2,7 @@
 
 # Cellebrite Physical Analyzer (PA) date and time filter script
 # Wansin Ounkeo 2016-5-22
-# Tested: PA 5.02, 5.1, internal IronPython 2.6 shell, Win7x64 4GB RAM
+# Tested: PA 5.02, internal IronPython 2.6 shell, Win7x64 4GB RAM
 
 # This script filters for all data (including deleted data) that 
 # fall within a user-specified date range.
@@ -35,7 +35,7 @@
 # changelog 2016-06-26	Add DeviceInfo timestamp checks with UTC-0 default.
 # changelog 2016-06-23  Remove 'ActiveTime' timestamp. It is like 'Duration' - not a timestamp.
 # changelog 2016-06-23	ApplicationUsage has LastLaunch timestamps with mix of values showing 
-# 			UTC offset and no UTC offset. Treat the no UTC offset timestamps as UTC time.
+# 						UTC offset and no UTC offset. Treat the no UTC offset timestamps as UTC time.
 
 # Include below for PA script. But don't include it in the 
 # python shell or it will hide 'ds' - the DataStore 
@@ -71,7 +71,6 @@ doNotFilterContact_by_LastContacted = True
 date_start = "2015-02-20 00:00:00-8"
 date_end = "2015-02-20 23:59:59-8"
 
-
 dt_start = TimeStamp(System.Convert.ToDateTime(date_start), True)
 dt_end = TimeStamp(System.Convert.ToDateTime(date_end), True)
 # output will be in format 12/25/2014 11:59:59 PM (UTC-8)
@@ -82,6 +81,9 @@ global_inside_timeframe  = False
 keep = False
 nRemoved = 0
 log = ''
+
+# used to track current file for debugging purposes
+currentFile = ''
 
 def debug(string, errtype):
 	try:
@@ -159,46 +161,50 @@ def containsTimeStamp_DataFiles(f) :
 				msg += "\t\tDeletedTime: "+str(f.DeletedTime)+" outside range\n"
 
 		
-		# 2016-7-6
-		# Need to handle EXIF DateTime with a "T" instead of a space between date and time
-		# e.g. mdf.Name = DateTime  mdf.Value = 2015-10-31T13:09:13-04:00
-		# Need to handle DateTimeOriginal DateTimeDigitized 2014:02:02 19:27:36
-		# to fix error: need more than 1 values to unpack
-
 		try:
 			if f.MetaData is not None:
 				for mdf in f.MetaData:
 					if mdf.Name == 'EXIFCaptureTime' and mdf.Value is not None:	
 						capturetime = mdf.Value.strip()
-						#print capturetime
+						capturetime = capturetime.replace("T", " ")
 						date, time, meridiem = capturetime.split(' ')
-						#print "date=", date, "time=", time, "meridiem=", meridiem
 						mm, dd, yyyy = date.split('/')
 						hr, mn, sec = time.split(':')
-						#print "year=", yyyy, "month=", mm, " day=", dd
-						#print hr, ":", mn, ":", sec
+						
 						old_hr = hr
 						if meridiem == 'PM' and int(hr) != 12:
 							hr = int(hr)+12
-							#print "PM so hour ", old_hr, " -> ", hr
+							
 						if meridiem == 'AM' and int(hr) == 12:
 							hr = '00'
 						t_str = yyyy+'-'+mm+'-'+dd+' '+str(hr)+':'+mn+':'+sec
-						#print "times string ="+tstr
+						
 						ts = TimeStamp(System.Convert.ToDateTime(t_str))
-						#print "EXIFCaptureTime= ", ecaptime, " TimeStamp = ", ts
+						
 						if withinRange(ts):
-							#print "EXIFCaptureTime=", capturetime, "TimeStamp=", ts
+							
 							msg += "\t\EXIFCaptureTime: "+str(ts)+" within range\n"
 						else:
 							msg += "\t\EXIFCaptureTime: "+str(ts)+" outside range\n"
-
+						
+					
 					if mdf.Name == 'DateTime' and mdf.Value is not None:
 						date_time = mdf.Value.strip()
+						date_time = date_time.replace("T", " ")
 						date, time = date_time.split(' ')
-						yyyy, mm, dd = date.split(':')
+						
+						if date[4] == ':':
+							yyyy, mm, dd = date.split(':')
+						elif date[4] == '-':
+							yyyy, mm, dd = date.split('-')
+							
+						utc_offset = time[8:]
+						time = time[:8]
 						hr, mn, sec = time.split(':')
-						t_str = yyyy+'-'+mm+'-'+dd+' '+str(hr)+':'+mn+':'+sec
+						# Some times will be '24:44:06' but should be 0:44:26 (localtime)
+						# or 7:44:36 AM(UTC+0) (EXIF DateTime are usually stored as local time)
+						hr = hr.replace("24", "0")
+						t_str = yyyy+'-'+mm+'-'+dd+' '+str(hr)+':'+mn+':'+sec+utc_offset
 						ts = TimeStamp(System.Convert.ToDateTime(t_str))
 						if withinRange(ts):
 							msg += "\t\CaptureTime: "+str(ts)+" within range\n"
@@ -206,7 +212,7 @@ def containsTimeStamp_DataFiles(f) :
 							msg += "\t\CaptureTime: "+str(ts)+" outside range\n"
 		except Exception as e:
 			msg = "Error EXIFCaptureTime "+str(e)
-			print (msg)
+			print (currentFile.encode('utf8')+":"+msg)
 			debug(msg, 'EXIFCaptureTime error')
 		
 		if global_inside_timeframe is True:
@@ -225,6 +231,7 @@ def containsTimeStamp_DataFiles(f) :
 # Filters Data Files by dates and clears non-matches
 def filter_DataFiles():
 	global nRemoved
+	global currentFile
 	tagslisttoClear = []
 	msg = ''
 	
@@ -251,8 +258,10 @@ def filter_DataFiles():
 					if f.Name.isunicode:
 						ustr = f.Name.encode('utf-8', 'ignore')
 						msg += ustr
+						currentFile = ustr
 					else:
 						msg += str(f.Name)
+						currentFile = str(f.Name)
 				except UnicodeEncodeError as e:
 					msg += "UnicodeEncodeError: bad filename"
 			
@@ -268,6 +277,7 @@ def filter_DataFiles():
 			#print(msg)
 			debug(msg, "Error writing log data files")
 			filenum += 1
+			currentFile = ''
 		msg = str(name)+'(s) Processed: '+str(filenum-1)
 		print(msg)
 		debug(msg, 'Data Files finish category error writing log')
@@ -1545,5 +1555,7 @@ class filterForm(Form):
 		self.Close()
 
 date_filter_form = filterForm()
+
+
 
 
