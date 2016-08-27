@@ -1486,10 +1486,23 @@ class filterForm(Form):
 		MessageBox.Show('Finding all data between\n\nStart: '+str(dt_start)+'\nEnd: '+str(dt_end)+'\n\nclick OK to start')
 		proc_start = datetime.now()
 	
-		# remove last 7 characters from string, add .txt
+		# We want to use device's Display Name as the log filename.
+		# Fix errors with Unicode characters in displayName for the log filename.
 		displayName = ds.DeviceInfo['Display Name']
-		
-		filename = "PA_date_filter_log-"+str(displayName)+"-"+str(proc_start)[:-7]+".txt"
+		filename = 'default_log_filename.txt'+"-"+str(proc_start)[:-7]+".txt"
+		if displayName is not None:
+			try:
+				if displayName.isunicode:
+					ustr = displayName.encode('utf-8', 'ignore')
+					msg += ustr
+					#remove last 7 characters from string, add .txt
+					filename = "PA_date_filter_log-"+str(ustr)+"-"+str(proc_start)[:-7]+".txt"
+				else:
+					msg += str(displayName)
+					filename = str(displayName)
+			except UnicodeEncodeError as e:
+				msg += "UnicodeEncodeError: bad displayName"
+
 		filename = filename.replace(":","")
 		filename = filename.replace(" ","_")
 		try:
