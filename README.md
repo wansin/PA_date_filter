@@ -33,6 +33,8 @@ secondary categories are not updated.
 In the Python shell, ds.Models shows unique data only. 
 The UFED PA GUI shows duplicate counts (in parenthesis).
 
+changelog 2016-8-27   fix Unicode log filename issue in device's Display Name
+
 changelog 2016-07-17  Handle EXIFTime stamps that have a 'T' between date and time.
                       Handle time formats in 24 hr time that use '24' instead of '0'
 
